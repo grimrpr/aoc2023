@@ -6,8 +6,9 @@ use std::io::BufRead;
 use std::io::BufReader;
 
 /// Represents each Card value
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug)]
 enum Card {
+    Joker,
     Two,
     Three,
     Four,
@@ -17,7 +18,7 @@ enum Card {
     Eight,
     Nine,
     Ten,
-    Jack,
+    //Jack,
     Queen,
     King,
     Ace,
@@ -36,7 +37,8 @@ impl TryFrom<char> for Card {
             '8' => Ok(Card::Eight),
             '9' => Ok(Card::Nine),
             'T' => Ok(Card::Ten),
-            'J' => Ok(Card::Jack),
+            //'J' => Ok(Card::Jack),
+            'J' => Ok(Card::Joker),
             'Q' => Ok(Card::Queen),
             'K' => Ok(Card::King),
             'A' => Ok(Card::Ace),
@@ -45,7 +47,7 @@ impl TryFrom<char> for Card {
     }
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
 enum HandType {
     HighCard,
     OnePair,
@@ -64,22 +66,41 @@ struct Hand {
 impl AsRef<HandType> for Hand {
     fn as_ref(&self) -> &HandType {
         let mut cards_count = [0u8; (Card::Ace as usize + 1)];
+        let mut joker_count = 0;
         for card in self.cards {
-            cards_count[card as usize] += 1;
+            if card == Card::Joker {
+                joker_count += 1;
+            } else {
+                cards_count[card as usize] += 1;
+            }
         }
 
         let mut heap = BinaryHeap::from(cards_count);
-        match heap.pop() {
-            Some(5) => &HandType::FiveOfAKind,
-            Some(4) => &HandType::FourOfAKind,
-            Some(3) => match heap.pop() {
+        match (heap.pop(), joker_count) {
+            (Some(5), 0) => &HandType::FiveOfAKind,
+            (Some(4), 1) => &HandType::FiveOfAKind,
+            (Some(4), 0) => &HandType::FourOfAKind,
+            (Some(3), 2) => &HandType::FiveOfAKind,
+            (Some(3), 1) => &HandType::FourOfAKind,
+            (Some(3), 0) => match heap.pop() {
                 Some(2) => &HandType::FullHouse,
                 _ => &HandType::ThreeOfAKind,
             },
-            Some(2) => match heap.pop() {
+            (Some(2), 3) => &HandType::FiveOfAKind,
+            (Some(2), 2) => &HandType::FourOfAKind,
+            (Some(2), 1) => match heap.pop() {
+                Some(2) => &HandType::FullHouse,
+                _ => &HandType::ThreeOfAKind,
+            },
+            (Some(2), 0) => match heap.pop() {
                 Some(2) => &HandType::TwoPair,
                 _ => &HandType::OnePair,
             },
+            (Some(1), 4) => &HandType::FiveOfAKind,
+            (Some(1), 3) => &HandType::FourOfAKind,
+            (Some(1), 2) => &HandType::ThreeOfAKind,
+            (Some(1), 1) => &HandType::OnePair,
+            (_, 5) => &HandType::FiveOfAKind,
             _ => &HandType::HighCard,
         }
     }
@@ -149,7 +170,8 @@ pub fn print_answer() {
         lines
             .iter()
             .filter_map(|line| line.trim().split_once(char::is_whitespace))
-            .map(|(hand, bid)| (Hand::try_from(hand).unwrap(), bid.parse::<u64>().unwrap())),
+            .map(|(hand, bid)| (Hand::try_from(hand).unwrap(), bid.parse::<u64>().unwrap()))
+            //.inspect(|(hand, _)| println!("{:?} {:?}", hand.cards, hand.as_ref())),
     );
 
     let sum_rank_mul_bids: u64 = hands_n_bids
