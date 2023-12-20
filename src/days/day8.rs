@@ -109,18 +109,19 @@ pub fn print_answer() {
                 .collect(),
         );
     }
-    println!("{:?}", results);
+    //println!("{:?}", results);
 
-    let mut res: Vec<_> = results.iter().flatten().copied().collect();
+    //let mut res: Vec<_> = results.iter().flatten().copied().collect();
 
-    while !res.iter().all(|(p, _)| *p == res[0].0) {
-        let max = res.iter().map(|(p, _)| p).max().unwrap().clone();
-        for (pos, cycle) in res.iter_mut() {
-            while *pos < max {
-                *pos += *cycle;
-            }
-        }
-    }
+    // use lcm for speedup
+    //while !res.iter().all(|(p, _)| *p == res[0].0) {
+    //    let max = res.iter().map(|(p, _)| p).max().unwrap().clone();
+    //    for (pos, cycle) in res.iter_mut() {
+    //        while *pos < max {
+    //            *pos += *cycle;
+    //        }
+    //    }
+    //}
 
-    println!("Part 2 result {}", res[0].0);
+    //println!("Part 2 result {}", res[0].0);
 }
