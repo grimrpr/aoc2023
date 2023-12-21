@@ -19,4 +19,6 @@ fn main() {
     days::day8::print_answer();
     println!("Day9:");
     days::day9::print_answer();
+    println!("Day10:");
+    days::day10::print_answer();
 }
