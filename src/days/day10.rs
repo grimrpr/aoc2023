@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufRead;
 use std::io::BufReader;
@@ -131,15 +132,15 @@ impl Map {
 struct Track {
     coming_from: Option<Direction>,
     position: usize,
-    step_count: usize,
+    steps: HashMap<usize, Direction>,
 }
 
 impl Track {
     fn new(start: usize) -> Self {
         Track {
-            position: start,
-            step_count: 0,
             coming_from: None,
+            position: start,
+            steps: HashMap::new(),
         }
     }
 
@@ -172,11 +173,44 @@ impl Track {
                 .clone(),
         };
         self.position = map.get_neighbor_position(self.position, next_dir);
-        self.step_count += 1;
+        self.steps.insert(self.position, next_dir);
         self.coming_from = Some(next_dir.opposite());
 
         self.position
     }
+}
+
+fn space_outside_of_track(map: &Map, track: &Track) -> usize {
+    map.tiles
+        .iter()
+        .enumerate()
+        .fold((0usize, true), |(count, outside), (idx, curr_tile)| {
+            if track.steps.contains_key(&idx) {
+                if (*curr_tile == Tile::Start)
+                    && (map.get_neighbor_tile(idx, Direction::North) != Tile::Illegal)
+                    && track
+                        .steps
+                        .contains_key(&map.get_neighbor_position(idx, Direction::North))
+                {
+                    return (count + 1, !outside);
+                }
+                if (*curr_tile == Tile::Start)
+                    || curr_tile
+                        .allowed_movement()
+                        .unwrap()
+                        .contains(&Direction::North)
+                {
+                    return (count + 1, !outside);
+                }
+                return (count + 1, outside);
+            }
+
+            if outside {
+                return (count + 1, outside);
+            }
+            (count, outside)
+        })
+        .0
 }
 
 pub fn print_answer() {
@@ -193,5 +227,9 @@ pub fn print_answer() {
         }
     }
 
-    println!("Steps until halfway {}", track.step_count / 2);
+    println!("Steps until halfway {}", track.steps.len() / 2);
+    println!(
+        "Fields inside loop {}",
+        map.tiles.len() - space_outside_of_track(&map, &track)
+    );
 }
