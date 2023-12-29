@@ -5,6 +5,7 @@ use std::io::BufRead;
 use std::io::BufReader;
 use std::iter::repeat;
 
+#[derive(Clone, Debug)]
 struct Galaxy(usize, usize);
 
 pub fn print_answer() {
@@ -23,29 +24,46 @@ pub fn print_answer() {
         BTreeSet::<usize>::from_iter(galaxies.iter().map(|Galaxy(row, _)| *row))
             .into_iter()
             .zip(0..height)
-            .map(|(row_galaxy, row_idx)| (row_galaxy, row_galaxy + row_galaxy - row_idx)),
+            .map(|(row_galaxy, row_idx)| (row_galaxy, row_galaxy - row_idx)),
     );
     let remap_cols: HashMap<usize, usize> = HashMap::from_iter(
         BTreeSet::<usize>::from_iter(galaxies.iter().map(|Galaxy(_, col)| *col))
             .into_iter()
             .zip(0..width)
-            .map(|(col_galaxy, col_idx)| (col_galaxy, col_galaxy + col_galaxy - col_idx)),
+            .map(|(col_galaxy, col_idx)| (col_galaxy, col_galaxy - col_idx)),
     );
 
+    let mut galaxies_part2: Vec<Galaxy> = galaxies.clone();
     // expand the universe
     for galaxy in &mut galaxies {
-        galaxy.0 = remap_rows[&galaxy.0];
-        galaxy.1 = remap_cols[&galaxy.1];
+        galaxy.0 += remap_rows[&galaxy.0];
+        galaxy.1 += remap_cols[&galaxy.1];
+    }
+
+    for galaxy in &mut galaxies_part2 {
+        galaxy.0 += 999_999 * remap_rows[&galaxy.0];
+        galaxy.1 += 999_999 * remap_cols[&galaxy.1];
     }
 
     // sum of shortest paths between galaxy pairs
     let mut sum_of_lengths = 0usize;
     for i in 0..galaxies.len() {
         for j in (i + 1)..galaxies.len() {
-            sum_of_lengths += galaxies[i].0.abs_diff(galaxies[j].0) + galaxies[i].1.abs_diff(galaxies[j].1)
+            sum_of_lengths +=
+                galaxies[i].0.abs_diff(galaxies[j].0) + galaxies[i].1.abs_diff(galaxies[j].1)
         }
     }
 
     println!("Sum of lengths {}", sum_of_lengths);
 
+    // sum of shortest paths between galaxy pairs
+    let mut sum_of_lengths_part2 = 0usize;
+    for i in 0..galaxies_part2.len() {
+        for j in (i + 1)..galaxies_part2.len() {
+            sum_of_lengths_part2 += galaxies_part2[i].0.abs_diff(galaxies_part2[j].0)
+                + galaxies_part2[i].1.abs_diff(galaxies_part2[j].1)
+        }
+    }
+
+    println!("Sum of lengths part2 {}", sum_of_lengths_part2);
 }
