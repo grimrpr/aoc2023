@@ -42,6 +42,36 @@ impl Terrain {
         }
         None
     }
+
+    fn reflection_with_smudge(&self) -> Option<usize> {
+        if self.rows.len() < 2 {
+            return None;
+        }
+
+        let mut smudged = true;
+
+        for idx in 1..(self.rows.len()) {
+            if self.rows[0..idx]
+                .iter()
+                .rev()
+                .zip(self.rows[idx..].iter())
+                .all(|(a, b)| match a ^ b {
+                    0 => true,
+                    c if smudged && (c & (c - 1) == 0) => {
+                        smudged = false;
+                        return true;
+                    }
+                    _ => false,
+                })
+                && !smudged
+            {
+                return Some(idx);
+            } else {
+                smudged = true;
+            }
+        }
+        None
+    }
 }
 
 #[test]
@@ -148,4 +178,16 @@ pub fn print_answer() {
         })
         .sum();
     println!("Sum of reflections: {}", reflection_notes_total);
+
+    let reflection_notes_total_part2: usize = terrains
+        .iter()
+        .map(|terrain| {
+            100 * terrain.reflection_with_smudge().unwrap_or(0)
+                + terrain.transpose().reflection_with_smudge().unwrap_or(0)
+        })
+        .sum();
+    println!(
+        "Sum of reflections with smudge: {}",
+        reflection_notes_total_part2
+    );
 }
